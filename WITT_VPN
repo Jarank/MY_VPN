@@ -1,0 +1,116 @@
+void loop() {
+  // check if WiFi is connected
+  if (WiFi.status() == WL_CONNECTED) {
+    // update NTP time every 60 seconds
+    if (millis() - ntpUpdateTime > 60000) {
+      configTime(gmtOffsetSeconds, daylightOffsetSeconds, ntpServer);
+      ntpUpdateTime = millis();
+    }
+
+    // check for Modbus TCP client connections
+    if (mbtcpServer.available()) {
+      MBAP_HEADER mbapHeader;
+      MBTCP_HEADER mbtcpHeader;
+      MBAP_RESPONSE mbapResponse;
+
+      // read the MBAP header and Modbus TCP header
+      mbtcpServer.readBytes((char *)&mbapHeader, sizeof(mbapHeader));
+      mbtcpServer.readBytes((char *)&mbtcpHeader, sizeof(mbtcpHeader));
+
+      // check the Modbus function code
+      switch (mbtcpHeader.func) {
+        case MBTCP_READ_HOLDING_REGISTERS: // read holding registers
+          uint16_t startingAddress = (mbtcpHeader.data[0] << 8) | mbtcpHeader.data[1];
+          uint16_t quantity = (mbtcpHeader.data[2] << 8) | mbtcpHeader.data[3];
+
+          if (startingAddress + quantity <= MAX_HOLDING_REGISTERS) {
+            // copy the holding register values to the response data
+            for (int i = 0; i < quantity; i++) {
+              mbapResponse.data[i * 2] = (holdingRegisters[startingAddress + i] >> 8) & 0xFF;
+              mbapResponse.data[i * 2 + 1] = holdingRegisters[startingAddress + i] & 0xFF;
+            }
+
+            // set the response length and send the response
+            mbapResponse.len = quantity * 2;
+            mbtcpServer.write((char *)&mbapResponse, sizeof(mbapResponse));
+          } else {
+            // illegal data address or quantity - send an error response
+            sendErrorResponse(mbtcpServer, mbapHeader, MBTCP_ILLEGAL_DATA_ADDRESS);
+          }
+
+          break;
+
+        case MBTCP_WRITE_SINGLE_REGISTER: // write single register
+          uint16_t address = (mbtcpHeader.data[0] << 8) | mbtcpHeader.data[1];
+          uint16_t value = (mbtcpHeader.data[2] << 8) | mbtcpHeader.data[3];
+
+          if (address < MAX_HOLDING_REGISTERS) {
+            // update the holding register value
+            holdingRegisters[address] = value;
+
+            // send a success response
+            mbapResponse.data[0] = mbcHeader.data[0];
+            mbapResponse.data[1] = mbcHeader.data[1];
+            mbapResponse.data[2] = mbcHeader.data[2];
+            mbapResponse.data[3] = mbcHeader.data[3];
+            mbapResponse.data[4] = mbcHeader.data[4];
+            mbapResponse.data[5] = mbcHeader.data[5];
+            mbapResponse.len = 6;
+            mbtcpServer.write((char *)&mbapResponse, sizeof(mbapResponse));
+          } else {
+            // illegal data address - send an error response
+            sendErrorResponse(mbtcpServer, mbapHeader, MBTCP_ILLEGAL_DATA_ADDRESS);
+          }
+
+          break;
+
+        default: // unsupported function code - send an error response
+          sendErrorResponse(mbtcpServer, mbapHeader, MBTCP_ILLEGAL_FUNCTION);
+          break;
+      }
+    }
+  }
+
+// read the LDR value and update input register 0
+int ldrValue = analogRead(A0);
+mb.Hreg(0, ldrValue);
+
+// update input status coil based on GPIO5 value
+bool inputStatus = digitalRead(5);
+if (inputStatus) {
+mb.Coil(14, true);
+} else {
+mb.Coil(14, false);
+}
+
+// update the analog output based on the value in the holding registers
+int analogOutput0 = mb.Hreg(1);
+analogWrite(15, analogOutput0);
+
+int analogOutput1 = mb.Hreg(2);
+analogWrite(13, analogOutput1);
+
+int analogOutput2 = mb.Hreg(3);
+analogWrite(12, analogOutput2);
+
+// update the status of the output coils based on the values in the holding registers
+bool coilStatus14 = mb.Coil(15);
+digitalWrite(14, coilStatus14);
+
+bool coilStatus15 = mb.Coil(16);
+digitalWrite(15, coilStatus15);
+
+// update the time in holding register 102 every 1 second
+unsigned long currentMillis = millis();
+if (currentMillis - previousMillis >= interval) {
+previousMillis = currentMillis;
+time_t now = time(nullptr);
+if (now != prevTime) {
+mb.Hreg(102, now);
+prevTime = now;
+}
+}
+
+// handle incoming Modbus TCP requests
+mb.task();
+}
