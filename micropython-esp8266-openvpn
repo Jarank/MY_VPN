@@ -1,0 +1,14 @@
+To get the "micropython-esp8266-openvpn" library, you can follow these steps:
+
+Go to the library's Github page at https://github.com/peterhinch/micropython-esp8266-openvpn.
+Click on the green "Code" button and select "Download ZIP" to download the library as a zip file.
+Extract the zip file to a folder on your computer.
+Connect your ESP-8266 to your computer via USB.
+Install the "ampy" tool, which is a command-line tool that allows you to interact with the files on your ESP-8266. You can install it using pip by running the command pip install adafruit-ampy.
+Use the ampy tool to copy the "openvpn.py" file and the "openvpn" folder from the extracted folder to your ESP-8266. For example, if you have extracted the folder to a folder named "micropython-esp8266-openvpn-master" and your ESP-8266 is mounted on "/dev/ttyUSB0", you can run the following commands:
+bash
+Copy code
+ampy -p /dev/ttyUSB0 put micropython-esp8266-openvpn-master/openvpn.py
+ampy -p /dev/ttyUSB0 put micropython-esp8266-openvpn-master/openvpn
+Once the files are copied to your ESP-8266, you can import the "openvpn" module in your MicroPython script and use it to configure OpenVPN on your ESP-8266.
+Note that this is a general guide, and the specific steps may vary depending on your operating system, MicroPython version, and ESP-8266 board. Be sure to consult the library's documentation for detailed instructions and examples.
