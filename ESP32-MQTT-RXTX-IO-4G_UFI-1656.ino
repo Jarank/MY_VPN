@@ -1,11 +1,10 @@
-
 #include <WiFi.h>
 #include <PubSubClient.h>
 
 
 // Update these with values suitable for your network.
 const char* ssid = "4G UFI-1656";
-const char* password = "01234567890";
+const char* password = "012xxxxx0";
 const char* mqtt_server = "vpn.osszone.com";
 const int RELAY1=16;
 const int RELAY2=17; 
