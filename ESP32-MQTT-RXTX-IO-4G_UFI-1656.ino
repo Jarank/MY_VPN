@@ -11,8 +11,8 @@ const int RELAY1=16;
 const int RELAY2=17; 
 
 #define mqtt_port 1883
-#define MQTT_USER "ossuser1"
-#define MQTT_PASSWORD "osspwd1"
+#define MQTT_USER "ossxxxxx"   //  user
+#define MQTT_PASSWORD "ossxxxx"  // passwd
 #define MQTT_SERIAL_PUBLISH_CH "/icircuit/ESP32/serialdata/tx"
 #define MQTT_SERIAL_RECEIVER_CH "/icircuit/ESP32/serialdata/rx"
 
@@ -49,7 +49,7 @@ void reconnect() {
     // Attempt to connect
     if (client.connect(clientId.c_str(),MQTT_USER,MQTT_PASSWORD)) {
       Serial.println("connected");
-      //Once connected, publish an announcement...
+//**********      //Once connected, publish an announcement... 
       client.publish("/icircuit/presence/ESP32/", "hello world ESP32-CTL1");
       // ... and resubscribe
       client.subscribe(MQTT_SERIAL_RECEIVER_CH);
