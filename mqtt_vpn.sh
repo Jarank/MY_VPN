@@ -5,7 +5,7 @@ while true; do
         echo "VPN is up"
         if ! pgrep mqtt_vpn &> /dev/null; then
             echo "mqtt_vpn is not running, starting it"
-            mqtt_vpn -i mqtt0 -a 192.168.XX.YY -b tcp://vpn.YOURMQTT.com:1883 -u MQTT_USER -p MQTT_PASSWORD &
+            mqtt_vpn -i mqtt0 -a 192.168.XX.YY -b tcp://vpn.YOURMQTT.com:1883 -u MQTT_USER -p MQTT_PASSWORD -k secrepwd & >> /dev/null
         fi
     else
         echo "VPN is down"
